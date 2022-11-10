@@ -23,54 +23,50 @@ public class DatabaseCLI
 {
     private static final char MIN_CHOICE = 'A';
     private static final char MAX_CHOICE = 'K';
+    private static final List<String> cmds = Arrays.asList(":Q");
 
     public static void main(String[] args)
     {
         // CHANGE TO COMPILED HELPER LIB WHEN COMPLETED
         Connection connect = null;
-        if (System.console() == null) { connect = com.helper.mysql.LocalLogin.ULogin("library"); }
-        else { connect = com.helper.mysql.LocalLogin.CLogin("library"); }
+        do
+        {
+            if (System.console() == null)
+                connect = com.helper.mysql.LocalLogin.ULogin("library");
+            else
+                connect = com.helper.mysql.LocalLogin.CLogin("library");
+        } while(connect == null);
 
         boolean menuLoop = true;
         while(menuLoop) {
             PrintMenu();
-            char choice = TakeSelection();
+            String choice = TakeSelection();
             ResultSet res = null;
             int changed = 0;
-            switch (choice) {
+            switch (choice.charAt(0)) {
                 case 'A':
                     res = OptionA(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) {
-                        break;
-                    }
+                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
                     com.helper.mysql.ResultSetParse.PrintResultSet(res);
                     break;
                 case 'B':
                     res = OptionB(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) {
-                        break;
-                    }
+                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
                     com.helper.mysql.ResultSetParse.PrintResultSet(res);
                     break;
                 case 'C':
                     res = OptionC(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) {
-                        break;
-                    }
+                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
                     com.helper.mysql.ResultSetParse.PrintResultSet(res);
                     break;
                 case 'D':
                     res = OptionD(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) {
-                        break;
-                    }
+                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
                     com.helper.mysql.ResultSetParse.PrintResultSet(res);
                     break;
                 case 'E':
                     res = OptionE(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) {
-                        break;
-                    }
+                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
                     com.helper.mysql.ResultSetParse.PrintResultSet(res);
                     break;
                 case 'F':
@@ -123,18 +119,18 @@ public class DatabaseCLI
     private static void PrintMenu()
     {
         List<String> menuItems = Arrays.asList(
-                "A: List all book information",
-                "B: Get the name of the author of a book",
-                "C: List the details of every book copy",
-                "D: List the details of every library member",
-                "E: Get the outstanding books for a member",
-                "F: Return a book borrowed by a member",
-                "G: Lend a book to a member",
-                "H: Renew book for a member",
-                "I: Check balance of member",
-                "J: Check all unpaid fees for member",
-                "K: Mark a fee as paid",
-                "Q: Quit");
+                "A : List all book information",
+                "B : Get the name of the author of a book",
+                "C : List the details of every book copy",
+                "D : List the details of every library member",
+                "E : Get the outstanding books for a member",
+                "F : Return a book borrowed by a member",
+                "G : Lend a book to a member",
+                "H : Renew book for a member",
+                "I : Check balance of member",
+                "J : Check all unpaid fees for member",
+                "K : Mark a fee as paid",
+                "Q : Quit");
 
         String header = "\nMySQL Database Command Line Interface";
         System.out.println(header);
@@ -147,16 +143,16 @@ public class DatabaseCLI
         }
     }
 
-    private static char TakeSelection()
+    private static String TakeSelection()
     {
-        char choice = '0';
-        while ((choice < MIN_CHOICE || choice > MAX_CHOICE) && choice != 'Q') {
+        String choice = "0";
+        while ((choice.charAt(0) < MIN_CHOICE || choice.charAt(0) > MAX_CHOICE) && choice.charAt(0) != 'Q') {
             try
             {
                 BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
                 System.out.print(": ");
-                choice = (char) read.read();
-                choice = Character.toUpperCase(choice);
+                choice = read.readLine();
+                choice = choice.toUpperCase();
             }
             catch (IOException e) { e.printStackTrace(); }
         }
@@ -309,21 +305,9 @@ public class DatabaseCLI
             String query =
                     "UPDATE borrow SET date_returned = now() WHERE barcode = ? AND date_returned IS NULL";
 
-            BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
-            boolean validCode = false;
-            codeList.remove(0);
-            String code = "";
-            while(!validCode)
-            {
-                System.out.print("Barcode to return: ");
-                code = read.readLine();
-                if (codeList.contains(code))
-                {
-                    validCode = true;
-                    continue;
-                }
-                System.out.println("Invalid barcode. Select one from list above.\n");
-            }
+            String code = GetInputFromList(codeList, "Barcode to return: ", true);
+            if (code == null)
+                return 0;
 
             // IMPLEMENT DATE SELECTION FOR FUN MAYBE
             //System.out.print("When it was returned (YYYY-MM-DD HH:MM:SS OR now): ");
@@ -386,19 +370,9 @@ public class DatabaseCLI
             }
             System.out.println("");
 
-            boolean validCode = false;
-            String code = "";
-            while (!validCode)
-            {
-                System.out.print("Borrowed book barcode: ");
-                code = read.readLine();
-                if (codeList.contains(code))
-                {
-                    validCode = true;
-                    continue;
-                }
-                System.out.println("Invalid barcode. Select one from the list above.\n");
-            }
+            String code = GetInputFromList(codeList, "Barcode to borrow: ", false);
+            if (code == null)
+                return 0;
 
             query = "INSERT INTO borrow VALUES (?, ?, now(), null, 0, null)";
             PreparedStatement prepStmt = connect.prepareStatement(query);
@@ -447,20 +421,9 @@ public class DatabaseCLI
 
             String query = "UPDATE borrow SET renewals_no = renewals_no + 1 WHERE card_no = ? AND barcode = ?";
 
-            BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
-            boolean validCode = false;
-            String code = "";
-            while(!validCode)
-            {
-                System.out.print("Barcode to renew: ");
-                code = read.readLine();
-                if (codeList.subList(1, codeList.size()).contains(code))
-                {
-                    validCode = true;
-                    continue;
-                }
-                System.out.println("Invalid barcode. Select one from list above.\n");
-            }
+            String code = GetInputFromList(codeList, "Barcode to renew: ", true);
+            if (code == null)
+                return 0;
 
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, codeList.get(0));
@@ -584,12 +547,9 @@ public class DatabaseCLI
                 System.out.println(tempCode);
             } while(res.next());
 
-            String code;
-            System.out.print("\nBarcode of book being repaid: ");
-            do
-            {
-                code = read.readLine();
-            } while(!codeList.contains(code));
+            String code = GetInputFromList(codeList, "\nBarcode of book being repaid: ", false);
+            if (code == null)
+                return 0;
 
             String query = "UPDATE borrow SET paid = TRUE WHERE card_no = ? AND barcode = ? AND paid IS NOT TRUE";
             PreparedStatement stmt = connect.prepareStatement(query);
@@ -632,6 +592,9 @@ public class DatabaseCLI
         System.out.print("Member card number: ");
         String mem = read.readLine();
 
+        if (!CheckMemberExists(connect, mem))
+            return null;
+
         PreparedStatement stmt = connect.prepareStatement(query);
         stmt.setString(1, mem);
         ResultSet res = stmt.executeQuery();
@@ -640,7 +603,8 @@ public class DatabaseCLI
             return null;
 
         List<String> codeList = new ArrayList<String>();
-        res.next();
+        if (!res.next())
+            return null;
         codeList.add(res.getString("card_no"));
         do
         {
@@ -679,5 +643,50 @@ public class DatabaseCLI
             return false;
 
         return true;
+    }
+
+    private static String GetInputFromList(List<String> list, String prompt, boolean trimFirst) throws IOException
+    {
+        BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
+        boolean validSelect = false;
+
+        List<String> temp = new ArrayList<>(List.copyOf(list));
+        if (trimFirst)
+            temp.remove(0);
+
+        String select = "";
+        while(!validSelect)
+        {
+            System.out.print(prompt);
+            select = read.readLine();
+            int cmdRes = CheckCommand(select);
+            if (cmdRes == 1)
+                return null;
+
+            if (temp.contains(select))
+            {
+                validSelect = true;
+                continue;
+            }
+            System.out.println("Invalid selection. Select one from list above.\n");
+        }
+
+        return select;
+    }
+
+    private static int CheckCommand(String cmd)
+    {
+        cmd = cmd.toUpperCase();
+
+        if (!cmds.contains(cmd))
+            return 0;
+
+        switch (cmd)
+        {
+            case ":Q": // Return to menu on :q/:Q
+                return 1;
+        }
+
+        return 0; // Return 0, tells Login methods to proceed.
     }
 }
