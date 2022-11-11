@@ -158,7 +158,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionA(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             String query =
@@ -168,7 +168,8 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
 
         return res;
@@ -176,7 +177,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionB(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             String query =
@@ -192,11 +193,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return null;
         }
 
         return res;
@@ -204,7 +207,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionC(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             String query =
@@ -214,7 +217,8 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
 
         return res;
@@ -222,7 +226,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionD(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             String query =
@@ -232,7 +236,8 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
 
         return res;
@@ -240,7 +245,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionE(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             String query =
@@ -262,11 +267,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return null;
         }
 
         return res;
@@ -274,7 +281,7 @@ public class DatabaseCLI
 
     private static int OptionF(Connection connect)
     {
-        int changed = 0;
+        int changed;
         try
         {
             List<String> codeList = GetOutstandingBooks(connect, false);
@@ -284,8 +291,7 @@ public class DatabaseCLI
                 System.out.println("Invalid member.");
                 return 0;
             }
-
-            if (codeList.size() == 1)
+            else if (codeList.size() == 1)
             {
                 System.out.println("No outstanding books for that member.");
                 return 0;
@@ -305,21 +311,19 @@ public class DatabaseCLI
             if (code == null)
                 return 0;
 
-            // IMPLEMENT DATE SELECTION FOR FUN MAYBE
-            //System.out.print("When it was returned (YYYY-MM-DD HH:MM:SS OR now): ");
-            //String date = read.readLine();
-
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, code);
             changed = stmt.executeUpdate();
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return 0;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return 0;
         }
 
         return changed;
@@ -327,9 +331,9 @@ public class DatabaseCLI
 
     private static int OptionG(Connection connect)
     {
-        int changed = 0;
-        ResultSet res = null;
-        String query = "";
+        int changed;
+        ResultSet res;
+        String query;
         try
         {
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
@@ -379,11 +383,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return 0;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return 0;
         }
 
         return changed;
@@ -391,7 +397,7 @@ public class DatabaseCLI
 
     private static int OptionH(Connection connect)
     {
-        int changed = 0;
+        int changed;
         try
         {
             List<String> codeList = GetOutstandingBooks(connect, true);
@@ -401,8 +407,7 @@ public class DatabaseCLI
                 System.out.println("Invalid member.");
                 return 0;
             }
-
-            if (codeList.size() == 1)
+            else if (codeList.size() == 1)
             {
                 System.out.println("No outstanding books for that member.");
                 return 0;
@@ -428,11 +433,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return 0;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return 0;
         }
 
         return changed;
@@ -440,7 +447,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionI(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
@@ -465,11 +472,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return null;
         }
 
         return res;
@@ -477,7 +486,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionJ(Connection connect)
     {
-        ResultSet res = null;
+        ResultSet res;
         try
         {
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
@@ -494,11 +503,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return null;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return null;
         }
 
         return res;
@@ -506,7 +517,7 @@ public class DatabaseCLI
 
     private static int OptionK(Connection connect)
     {
-        int changed = 0;
+        int changed;
 
         try
         {
@@ -521,12 +532,6 @@ public class DatabaseCLI
             }
 
             ResultSet res = GetOverdueBooks(connect, mem);
-
-            if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res))
-            {
-                System.out.println("Invalid member.");
-                return 0;
-            }
 
             if (!res.next())
             {
@@ -555,11 +560,13 @@ public class DatabaseCLI
         }
         catch(SQLException e)
         {
-            e.printStackTrace();
+            System.out.println("Exception occurred, check connection.");
+            return 0;
         }
         catch(IOException e)
         {
-            e.printStackTrace();
+            System.out.println("Input exception occurred, returning to menu.");
+            return 0;
         }
 
         return changed;
