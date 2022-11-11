@@ -23,12 +23,11 @@ public class DatabaseCLI
 {
     private static final char MIN_CHOICE = 'A';
     private static final char MAX_CHOICE = 'K';
-    private static final List<String> cmds = Arrays.asList(":Q");
 
     public static void main(String[] args)
     {
         // CHANGE TO COMPILED HELPER LIB WHEN COMPLETED
-        Connection connect = null;
+        Connection connect;
         do
         {
             if (System.console() == null)
@@ -41,33 +40,28 @@ public class DatabaseCLI
         while(menuLoop) {
             PrintMenu();
             String choice = TakeSelection();
-            ResultSet res = null;
-            int changed = 0;
+            ResultSet res;
+            int changed;
             switch (choice.charAt(0)) {
                 case 'A':
                     res = OptionA(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'B':
                     res = OptionB(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'C':
                     res = OptionC(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'D':
                     res = OptionD(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'E':
                     res = OptionE(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'F':
                     changed = OptionF(connect);
@@ -92,13 +86,11 @@ public class DatabaseCLI
                     break;
                 case 'I':
                     res = OptionI(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'J':
                     res = OptionJ(connect);
-                    if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res)) { break; }
-                    com.helper.mysql.ResultSetParse.PrintResultSet(res);
+                    HandleRes(res);
                     break;
                 case 'K':
                     changed = OptionK(connect);
@@ -154,7 +146,11 @@ public class DatabaseCLI
                 choice = read.readLine();
                 choice = choice.toUpperCase();
             }
-            catch (IOException e) { e.printStackTrace(); }
+            catch (IOException e)
+            {
+                System.out.println("Input exception occurred, try again.");
+                continue;
+            }
         }
 
         return choice;
@@ -645,6 +641,18 @@ public class DatabaseCLI
         return true;
     }
 
+    private static boolean HandleRes(ResultSet res)
+    {
+        if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res))
+        {
+            System.out.println("\nNo results.");
+            return false;
+        }
+
+        com.helper.mysql.ResultSetParse.PrintResultSet(res);
+        return true;
+    }
+
     private static String GetInputFromList(List<String> list, String prompt, boolean trimFirst) throws IOException
     {
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
@@ -659,7 +667,7 @@ public class DatabaseCLI
         {
             System.out.print(prompt);
             select = read.readLine();
-            int cmdRes = CheckCommand(select);
+            int cmdRes = CheckSubpromptCommand(select);
             if (cmdRes == 1)
                 return null;
 
@@ -674,17 +682,26 @@ public class DatabaseCLI
         return select;
     }
 
-    private static int CheckCommand(String cmd)
+    private static int CheckSubpromptCommand(String cmd)
     {
         cmd = cmd.toUpperCase();
 
-        if (!cmds.contains(cmd))
+        if (cmd.charAt(0) != ':')
             return 0;
 
-        switch (cmd)
+        char[] cmdArr = new char[cmd.length() - 1];
+        for (int i = 1; i < cmd.length(); i++)
         {
-            case ":Q": // Return to menu on :q/:Q
-                return 1;
+            cmdArr[i - 1] = cmd.charAt(i);
+        }
+
+        for (int i = 0; i < cmdArr.length; i++)
+        {
+            switch (cmdArr[i])
+            {
+                case 'Q': // Return to menu on :q/:Q
+                    return 1;
+            }
         }
 
         return 0; // Return 0, tells Login methods to proceed.

@@ -1,6 +1,7 @@
 package com.helper.mysql;
 
 import java.io.BufferedReader;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.Buffer;
@@ -19,27 +20,29 @@ public class LocalLogin {
         int failCount = 0;
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
         while (!login) {
-            String user = "";
+            String user;
             try
             {
                 user = BRInput(read, "Username: ");
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                System.out.println("Input exception occurred, try again.");
+                continue;
             }
             int cmdRes = CheckCommand(user);
             if (cmdRes == 1)
                 return null;
 
-            String pass = "";
+            String pass;
             try
             {
                 pass = BRInput(read, "Password: ");
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                System.out.println("Input exception occurred, try again.");
+                continue;
             }
             cmdRes = CheckCommand(pass);
             if (cmdRes == 1)
@@ -75,14 +78,30 @@ public class LocalLogin {
         int failCount = 0;
         while(!login)
         {
-            String user = "";
-            user = CMDInput("Username: ", false);
+            String user ;
+            try
+            {
+                user = CMDInput("Username: ", false);
+            }
+            catch(IOError e)
+            {
+                System.out.println("Input exception occurred, try again.");
+                continue;
+            }
             int cmdRes = CheckCommand(user);
             if (cmdRes == 1)
                 return null;
 
-            String pass = "";
-            pass = CMDInput("Password: ", true);
+            String pass;
+            try
+            {
+                pass = CMDInput("Password: ", true);
+            }
+            catch(IOError e)
+            {
+                System.out.println("Input exception occurred, try again.");
+                continue;
+            }
             cmdRes = CheckCommand(pass);
             if (cmdRes == 1)
                 return null;
@@ -115,17 +134,26 @@ public class LocalLogin {
     {
         cmd = cmd.toUpperCase();
 
-        if (!cmds.contains(cmd))
+        if (cmd.charAt(0) != ':')
             return 0;
 
-        switch (cmd)
+        char[] cmdArr = new char[cmd.length() - 1];
+        for(int i = 1; i < cmd.length(); i++)
         {
-            case ":Q": // Exit on :q/:Q
-                System.exit(0);
-            case ":R": // Return 1, which tells the Login methods to re-try,
-                       // use-case being re-trying after typo in username, etc
-                return 1;
+            cmdArr[i - 1] = cmd.charAt(i);
+        }
 
+        for (int i = 0; i < cmdArr.length; i++)
+        {
+            switch (cmdArr[i])
+            {
+                case 'Q': // Exit on :q/:Q
+                    System.exit(0);
+                case 'R': // Return 1, which tells the Login methods to re-try,
+                           // use-case being re-trying after typo in username, etc
+                    return 1;
+
+            }
         }
 
         return 0; // Return 0, tells Login methods to proceed.
@@ -133,17 +161,13 @@ public class LocalLogin {
 
     private static String BRInput(BufferedReader read, String prompt) throws IOException
     {
-        String str = "";
         System.out.print(prompt);
-        str = read.readLine();
-
-        return str;
+        return read.readLine();
     }
 
-    private static String CMDInput(String prompt, boolean password)
+    private static String CMDInput(String prompt, boolean password) throws IOError
     {
         System.out.print(prompt);
-        String str = password ? String.valueOf(System.console().readPassword()) : System.console().readLine();
-        return str;
+        return password ? String.valueOf(System.console().readPassword()) : System.console().readLine();
     }
 }

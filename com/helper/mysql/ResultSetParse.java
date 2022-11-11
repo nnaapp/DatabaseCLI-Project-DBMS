@@ -49,12 +49,6 @@ public class ResultSetParse
 
     public static boolean CheckResultsValid(ResultSet res)
     {
-        if (res == null)
-        {
-            System.out.println("\nNo results.");
-            return false;
-        }
-
-        return true;
+        return res == null ? false : true;
     }
 }
