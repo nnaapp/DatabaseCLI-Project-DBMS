@@ -1,7 +1,6 @@
 package com.dbms.project;
 
 import java.io.BufferedReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
@@ -179,6 +178,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionA(Connection connect)
     {
+        // Basic option, generates result set from predetermined query
         ResultSet res;
         try
         {
@@ -206,10 +206,13 @@ public class DatabaseCLI
                     "SELECT author.first_name, author.middle_name, author.last_name " +
                             "FROM book NATURAL JOIN book_author NATURAL JOIN author WHERE book.ISBN = ?";
 
+            // Get ISBN string from user
+            // ISBN not in database will result in empty set, no loop
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Book ISBN: ");
             String ISBN = read.readLine();
 
+            // Generate set with ISBN
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, ISBN);
             res = stmt.executeQuery();
@@ -230,6 +233,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionC(Connection connect)
     {
+        // Basic option, generates result set from predetermined query
         ResultSet res;
         try
         {
@@ -249,6 +253,7 @@ public class DatabaseCLI
 
     private static ResultSet OptionD(Connection connect)
     {
+        // Basic option, generates result set from predetermined query
         ResultSet res;
         try
         {
@@ -276,6 +281,8 @@ public class DatabaseCLI
                             "FROM borrow NATURAL JOIN copy NATURAL JOIN book " +
                             "WHERE card_no = ? AND borrow.date_returned IS NULL";
 
+            // Gets member card number from user and validates that they exist
+            // Returns null (irregularity) on invalid member
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
             String mem = read.readLine();
@@ -286,6 +293,7 @@ public class DatabaseCLI
                 return null;
             }
 
+            // Generate result set from member
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, mem);
             res = stmt.executeQuery();
@@ -309,19 +317,23 @@ public class DatabaseCLI
         int changed;
         try
         {
+            // Get list of outstanding books for a user
             List<String> codeList = GetOutstandingBooks(connect, false);
 
+            // Null returned list means user does not exist
             if (codeList == null)
             {
                 System.out.println("Invalid member.");
                 return 0;
             }
+            // Size 1 (0 index is member card num) means no outstanding books
             else if (codeList.size() == 1)
             {
                 System.out.println("No outstanding books for that member.");
                 return 0;
             }
 
+            // Present list to user
             System.out.println("");
             for (int i = 1; i < codeList.size(); i++)
             {
@@ -329,13 +341,16 @@ public class DatabaseCLI
             }
             System.out.println("");
 
-            String query =
-                    "UPDATE borrow SET date_returned = now() WHERE barcode = ? AND date_returned IS NULL";
-
+            // Get user input from that list, code being null indicated user requested to go back to menu
+            // Or an unknown error occurred
             String code = GetInputFromList(codeList, "Barcode to return: ", true);
             if (code == null)
                 return 0;
 
+            String query =
+                    "UPDATE borrow SET date_returned = now() WHERE barcode = ? AND date_returned IS NULL";
+
+            // Generate set from barcode
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, code);
             changed = stmt.executeUpdate();
@@ -361,6 +376,7 @@ public class DatabaseCLI
         String query;
         try
         {
+            // Get member card number from user and validate that they exist
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
             String mem = read.readLine();
@@ -371,23 +387,26 @@ public class DatabaseCLI
                 return 0;
             }
 
+            // Generates a list of all book copies that are not borrowed
             Statement stmt = connect.createStatement();
             query = "SELECT copy.barcode FROM copy LEFT OUTER JOIN borrow ON copy.barcode = borrow.barcode " +
                     "GROUP BY copy.barcode " +
                     "HAVING sum(CASE WHEN date_borrowed IS NOT NULL AND date_returned IS NULL THEN 1 ELSE 0 END) = 0";
             res = stmt.executeQuery(query);
-            if (!res.next())
+            if (!res.next()) // Empty list indicates all books are out
             {
                 System.out.println("No books are available to borrow.");
                 return 0;
             }
 
+            // Make list of all books from above
             List<String> codeList = new ArrayList<String>();
             do
             {
                 codeList.add(res.getString("barcode"));
             } while(res.next());
 
+            // Present list to user
             System.out.println("Available books: ");
             for (int i = 0; i < codeList.size(); i++)
             {
@@ -395,10 +414,13 @@ public class DatabaseCLI
             }
             System.out.println("");
 
+            // Get user input from list, null code means user requested to return to menu
+            // Or unknown error occurred
             String code = GetInputFromList(codeList, "Barcode to borrow: ", false);
             if (code == null)
                 return 0;
 
+            // Update database with entry that member borrowed selected book
             query = "INSERT INTO borrow VALUES (?, ?, now(), null, 0, null)";
             PreparedStatement prepStmt = connect.prepareStatement(query);
             prepStmt.setString(1, mem);
@@ -425,19 +447,23 @@ public class DatabaseCLI
         int changed;
         try
         {
+            // Get list of all RENEWABLE outstanding books for a member
             List<String> codeList = GetOutstandingBooks(connect, true);
 
+            // Null list indicates member does not exist
             if (codeList == null)
             {
                 System.out.println("Invalid member.");
                 return 0;
             }
+            // Size 1 (0 index is member card num) means no outstanding books
             else if (codeList.size() == 1)
             {
                 System.out.println("No outstanding books for that member.");
                 return 0;
             }
 
+            // Present list to user
             System.out.println("");
             for (int i = 1; i < codeList.size(); i++)
             {
@@ -445,12 +471,15 @@ public class DatabaseCLI
             }
             System.out.println("");
 
-            String query = "UPDATE borrow SET renewals_no = renewals_no + 1 WHERE card_no = ? AND barcode = ?";
-
+            // Get user input from list, null code indicates user requested to go back to menu
+            // Or unknown error occurred
             String code = GetInputFromList(codeList, "Barcode to renew: ", true);
             if (code == null)
                 return 0;
 
+            String query = "UPDATE borrow SET renewals_no = renewals_no + 1 WHERE card_no = ? AND barcode = ?";
+
+            // Update table to renew book
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, codeList.get(0));
             stmt.setString(2, code);
@@ -475,6 +504,7 @@ public class DatabaseCLI
         ResultSet res;
         try
         {
+            // Get member card number from user and validate that member exists
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
             String mem = read.readLine();
@@ -491,6 +521,7 @@ public class DatabaseCLI
                     "- (14 * (renewals_no + 1)) AS days FROM outstanding) AS diff " +
                     "WHERE days > 0";
 
+            // Generate "set" (one entry) representing member's late fees total
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, mem);
             res = stmt.executeQuery();
@@ -514,6 +545,7 @@ public class DatabaseCLI
         ResultSet res;
         try
         {
+            // Get member card number from user and validate that member exists
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
             String mem = read.readLine();
@@ -524,6 +556,7 @@ public class DatabaseCLI
                 return null;
             }
 
+            // Get result set of unpaid outstanding books for user
             res = GetOverdueBooks(connect, mem);
         }
         catch(SQLException e)
@@ -546,6 +579,7 @@ public class DatabaseCLI
 
         try
         {
+            // Get member card number from user and validate that member exists
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
             String mem = read.readLine();
@@ -556,14 +590,17 @@ public class DatabaseCLI
                 return 0;
             }
 
+            // Get result set of unpaid outstanding books for user
             ResultSet res = GetOverdueBooks(connect, mem);
 
+            // If no unpaid books, return
             if (!res.next())
             {
                 System.out.println("No unpaid books could be found.");
                 return 0;
             }
 
+            // Generate list of barcodes for those books from result set
             List<String> codeList = new ArrayList<String>();
             System.out.println("");
             do
@@ -573,10 +610,13 @@ public class DatabaseCLI
                 System.out.println(tempCode);
             } while(res.next());
 
+            // Get user input from list, null code means user requested to go back to menu
+            // Or unknown error occurred
             String code = GetInputFromList(codeList, "\nBarcode of book being repaid: ", false);
             if (code == null)
                 return 0;
 
+            // Update chosen unpaid book to be marked as paid
             String query = "UPDATE borrow SET paid = TRUE WHERE card_no = ? AND barcode = ? AND paid IS NOT TRUE";
             PreparedStatement stmt = connect.prepareStatement(query);
             stmt.setString(1, mem);
