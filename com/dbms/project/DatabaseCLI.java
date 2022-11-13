@@ -1,48 +1,55 @@
 package com.dbms.project;
 
 import java.io.BufferedReader;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.Character;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.sql.*;
-
-///
-/// BEFORE SUBMITTING:
-/// GO THROUGH AND REMOVE ALL printStackTrace() CALLS
-/// REPLACE WITH LEGIT ERROR HANDLING
-///
-/// THOROUGHLY TEST FOR CRASHES, WRITE TEST CASES
-///
-/// ALL REFERENCES TO com.helper.mysql BECOME JAR LIB WHEN PROGRAM COMPLETE
-///
+import com.helper.*;
 
 public class DatabaseCLI
 {
+    // Global constants to define menu start and end bounds, alphabetically
     private static final char MIN_CHOICE = 'A';
     private static final char MAX_CHOICE = 'K';
 
+    /**
+     * Main function, handles the menu loop and
+     * calls helper functions such as the two login variants.
+     * @param args Command line arguments, unused.
+     */
     public static void main(String[] args)
     {
-        // CHANGE TO COMPILED HELPER LIB WHEN COMPLETED
+        // This loop re-tries the login until a connection is achieved.
+        // This loop can be broken using the : syntax, :q or :Q quits.
         Connection connect;
         do
         {
-            if (System.console() == null)
-                connect = com.helper.mysql.LocalLogin.ULogin("library");
-            else
-                connect = com.helper.mysql.LocalLogin.CLogin("library");
+            if (System.console() == null) // If not running in a true console, such as IDE terminal
+                connect = LocalLogin.ULogin("library");
+            else // Else, as in running in a true console
+                connect = LocalLogin.CLogin("library");
         } while(connect == null);
 
-        boolean menuLoop = true;
-        while(menuLoop) {
+        boolean menuLoop = true; // This is just to avoid an ugly while(true)
+        // Menu loop, runs until the user enters the quit option
+        while(menuLoop)
+        {
+            // Prints the visual elements, takes user choice
             PrintMenu();
-            String choice = TakeSelection();
+            String choice = TakeSelection(); // This also cleans input by ensuring it is caps
             ResultSet res;
             int changed;
-            switch (choice.charAt(0)) {
+            // Only the first character inputted is considered
+            // This means that "abcdefg" would result in case 'A"
+            switch (choice.charAt(0))
+            {
+                // These cases are largely standardized
+                // ResultSet based cases call their respective method, then pass set off to handler
+                // Update based cases check how many rows were changed, and print output
                 case 'A':
                     res = OptionA(connect);
                     HandleRes(res);
@@ -100,6 +107,7 @@ public class DatabaseCLI
                         System.out.println("No fee was paid.");
                     break;
                 case 'Q':
+                    // System.exit(0) could go in here, but I consider the resulting while(true) ugly
                     System.out.println("Quitting.");
                     menuLoop = false;
             }
@@ -108,8 +116,13 @@ public class DatabaseCLI
         System.exit(0);
     }
 
+    /**
+     * Prints out a menu, hard coded into the menuItems String list.
+     * This could be loaded from a file, but that seemed to be not needed.
+     */
     private static void PrintMenu()
     {
+        // Menu in list form
         List<String> menuItems = Arrays.asList(
                 "A : List all book information",
                 "B : Get the name of the author of a book",
@@ -126,21 +139,29 @@ public class DatabaseCLI
 
         String header = "\nMySQL Database Command Line Interface";
         System.out.println(header);
-        for(int i = 0; i < header.length(); i++) { System.out.print('*'); }
+        // This loop prints out a line of *'s equivalent to the header
+        for(int i = 0; i < header.length(); i++)
+            System.out.print('*');
         System.out.println("");
 
+        // Prints the list of menu entries
         for(int i = 0; i < menuItems.size(); i++)
-        {
             System.out.println(menuItems.get(i));
-        }
     }
 
+    /**
+     * Gets user input, in string form, capitalized it,
+     * and ensured that the input is within the bounds of the menu.
+     * @return The string the user entered, capitalized and with a 1st character within the given bounds.
+     */
     private static String TakeSelection()
     {
-        String choice = "0";
-        while ((choice.charAt(0) < MIN_CHOICE || choice.charAt(0) > MAX_CHOICE) && choice.charAt(0) != 'Q') {
+        String choice;
+        do
+        {
             try
             {
+                // Gets input and capitalized it
                 BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
                 System.out.print(": ");
                 choice = read.readLine();
@@ -149,9 +170,9 @@ public class DatabaseCLI
             catch (IOException e)
             {
                 System.out.println("Input exception occurred, try again.");
-                continue;
+                choice = "0"; // Intentionally invalid, to reset loop
             }
-        }
+        } while ((choice.charAt(0) < MIN_CHOICE || choice.charAt(0) > MAX_CHOICE) && choice.charAt(0) != 'Q');
 
         return choice;
     }
@@ -162,7 +183,8 @@ public class DatabaseCLI
         try
         {
             String query =
-                    "SELECT ISBN, title, genre.name AS genre_name, date_published, publisher, edition, description FROM book NATURAL JOIN genre";
+                    "SELECT ISBN, title, genre.name AS genre_name, date_published, publisher, edition, description " +
+                            "FROM book NATURAL JOIN genre";
             Statement stmt = connect.createStatement();
             res = stmt.executeQuery(query);
         }
@@ -181,7 +203,8 @@ public class DatabaseCLI
         try
         {
             String query =
-                    "SELECT author.first_name, author.middle_name, author.last_name FROM book NATURAL JOIN book_author NATURAL JOIN author WHERE book.ISBN = ?";
+                    "SELECT author.first_name, author.middle_name, author.last_name " +
+                            "FROM book NATURAL JOIN book_author NATURAL JOIN author WHERE book.ISBN = ?";
 
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Book ISBN: ");
@@ -249,7 +272,9 @@ public class DatabaseCLI
         try
         {
             String query =
-                    "SELECT book.ISBN, title, copy.barcode, date_borrowed, renewals_no FROM borrow NATURAL JOIN copy NATURAL JOIN book WHERE card_no = ? AND borrow.date_returned IS NULL";
+                    "SELECT book.ISBN, title, copy.barcode, date_borrowed, renewals_no " +
+                            "FROM borrow NATURAL JOIN copy NATURAL JOIN book " +
+                            "WHERE card_no = ? AND borrow.date_returned IS NULL";
 
             BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
             System.out.print("Member card number: ");
@@ -573,14 +598,17 @@ public class DatabaseCLI
     }
 
     /**
-     * @param connect
-     * @param renewable
-     * @return List<String>, first entry is member card number. Null if SQLException.
+     * Gets list of outstanding books for a user, can be only renewable books,
+     * or books regardless of if renewable or not
+     * @param connect Connection to database
+     * @param renewable If the books should be limited to renewable or not
+     * @return List of barcodes, first entry is member card number. Null if SQLException.
      * @throws SQLException
      * @throws IOException
      */
     private static List<String> GetOutstandingBooks(Connection connect, boolean renewable) throws SQLException, IOException
     {
+        // This block alters the query depending on the renewable argument
         String query;
         if (!renewable)
             query = "SELECT borrow.card_no, book.ISBN, title, copy.barcode, date_borrowed, renewals_no " +
@@ -591,6 +619,7 @@ public class DatabaseCLI
                     "FROM borrow NATURAL JOIN copy NATURAL JOIN book " +
                     "WHERE card_no = ? AND borrow.date_returned IS NULL AND renewals_no < 2";
 
+        // Gets and checks member card number using CheckMemberExists(), returns null if member is invalid
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
         System.out.print("Member card number: ");
         String mem = read.readLine();
@@ -598,13 +627,16 @@ public class DatabaseCLI
         if (!CheckMemberExists(connect, mem))
             return null;
 
+        // Generated result set from query and member card no
         PreparedStatement stmt = connect.prepareStatement(query);
         stmt.setString(1, mem);
         ResultSet res = stmt.executeQuery();
 
-        if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res))
+        // Checks if set is irregular or invalid
+        if (!ResultSetParse.CheckResultsValid(res))
             return null;
 
+        // Returns if set is regular but empty, otherwise, generates list of barcodes
         List<String> codeList = new ArrayList<String>();
         if (!res.next())
             return null;
@@ -617,6 +649,13 @@ public class DatabaseCLI
         return codeList;
     }
 
+    /**
+     *  Takes a member card number and generates a set of overdue books associated with them.
+     * @param connect Connection to database
+     * @param memCardNum Valid member card number
+     * @return Result set of overdue books for given member
+     * @throws SQLException
+     */
     private static ResultSet GetOverdueBooks(Connection connect, String memCardNum) throws SQLException
     {
         String query =
@@ -635,8 +674,17 @@ public class DatabaseCLI
         return res;
     }
 
+    /**
+     * Checks if a member card number exists in the database instance
+     * @param connect Connection to database
+     * @param memCardNum Member card number to be checked
+     * @return True if member exists, false if not.
+     * @throws SQLException
+     */
     private static boolean CheckMemberExists(Connection connect, String memCardNum) throws SQLException
     {
+        // Works by generically selecting from members, limited to provided number
+        // A real member will not have an empty set
         String query = "SELECT * FROM member WHERE card_no = ?";
 
         PreparedStatement stmt = connect.prepareStatement(query);
@@ -648,60 +696,95 @@ public class DatabaseCLI
         return true;
     }
 
+    /**
+     * Checks regularity of result set, if regular, attempts to print set out to console
+     * @param res Any ResultSet
+     * @return True if print was attempted, false if set was irregular
+     */
     private static boolean HandleRes(ResultSet res)
     {
-        if (!com.helper.mysql.ResultSetParse.CheckResultsValid(res))
+        if (!ResultSetParse.CheckResultsValid(res))
         {
             System.out.println("\nNo results.");
             return false;
         }
 
-        com.helper.mysql.ResultSetParse.PrintResultSet(res);
+        ResultSetParse.PrintResultSet(res);
         return true;
     }
 
-    private static String GetInputFromList(List<String> list, String prompt, boolean trimFirst) throws IOException
+    /**
+     * Gets user input from a list of strings, this uses a while loop
+     * which can be broken using the command :q or :Q
+     * @param list List of strings, will not break if empty
+     * @param prompt Prompt to present to user
+     * @param trimFirst Do not consider first element of list if true,
+     *                  useful for lists with 0 indexed identifiers
+     * @return Validated user input from the list, or null if loop was terminated
+     * @throws IOException
+     */
+    private static String GetInputFromList(List<String> list, String prompt, boolean trimFirst)
     {
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
         boolean validSelect = false;
 
+        // Lists are passed BY REFERENCE.
+        // This copies the contents, not the object itself.
         List<String> temp = new ArrayList<>(List.copyOf(list));
-        if (trimFirst)
+        if (trimFirst) // This is why we want a unique copy, to trim 0 element.
             temp.remove(0);
 
-        String select = "";
+        // Gets user input, checks for : commands (:Q, here), checks if valid input
+        String select = null;
         while(!validSelect)
         {
-            System.out.print(prompt);
-            select = read.readLine();
-            int cmdRes = CheckSubpromptCommand(select);
-            if (cmdRes == 1)
-                return null;
-
-            if (temp.contains(select))
+            try
             {
-                validSelect = true;
-                continue;
+                System.out.print(prompt);
+                select = read.readLine();
+                int cmdRes = CheckSubpromptCommand(select);
+                if (cmdRes == 1)
+                    return null;
+
+                if (temp.contains(select))
+                {
+                    validSelect = true;
+                    continue;
+                }
+                System.out.println("Invalid selection. Select one from list above.\n");
             }
-            System.out.println("Invalid selection. Select one from list above.\n");
+            catch(IOException e)
+            {
+                System.out.println("Input exception occurred, try again.");
+            }
         }
 
         return select;
     }
 
+    /**
+     * Checks input for command syntax. : denotes an input command.
+     * :q/:Q mean to back out of the input prompt, here.
+     * @param cmd String to check for commands
+     * @return Integer associated with found command, 1 for quit, 0 for nothing
+     */
     private static int CheckSubpromptCommand(String cmd)
     {
+        // Set input to uppercase to avoid variance
         cmd = cmd.toUpperCase();
 
+        // Return 0 if no command syntax
         if (cmd.charAt(0) != ':')
             return 0;
 
+        // Turn string into array if syntax found
         char[] cmdArr = new char[cmd.length() - 1];
         for (int i = 1; i < cmd.length(); i++)
         {
             cmdArr[i - 1] = cmd.charAt(i);
         }
 
+        // Iterate over array and execute command associated with any valid chars
         for (int i = 0; i < cmdArr.length; i++)
         {
             switch (cmdArr[i])
@@ -711,6 +794,6 @@ public class DatabaseCLI
             }
         }
 
-        return 0; // Return 0, tells Login methods to proceed.
+        return 0; // Return 0, means proceed
     }
 }
